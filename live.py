@@ -4,14 +4,48 @@ import random
 import requests
 import subprocess
 
+OAUTH = 'OAuth <OAUTH HERE>'
+FOLLOWED_FILE = '<PATH TO WHERE TO STORE FILE>.json'
+FOLLOWED = ['<FOLLOWED STREAMS>']
+
 url = 'https://api.twitch.tv/kraken/streams/followed'
-oauth = 'OAuth <OAUTH HERE>'
 client_id = 'dsv0rf69bvzgi9ch6ys16vwncjax1z'
 
-response = requests.get(
-    url, headers={'Authorization': oauth, 'Client-ID': client_id}
-)
-data = json.loads(response.text)
+
+def get_data():
+    response = requests.get(
+        url, headers={'Authorization': OAUTH, 'Client-ID': client_id}
+    )
+    data = json.loads(response.text)
+    # Try to get stream info from json. Gives KeyError if the OAuth fails
+    try:
+        numStreams = data["_total"]
+    except KeyError:
+        print(formatting.RED + "KeyError - make sure your OAuth is formatted"
+              "correctly in live.py" + formatting.ENDC)
+        sys.exit(1)
+    return data, numStreams
+
+
+def save_online_streams(data):
+    with open(FOLLOWED_FILE, 'w') as outfile:
+        json.dump(data, outfile)
+
+
+def load_online_streams():
+    with open(FOLLOWED_FILE, 'r') as infile:
+        text = infile.read()
+    return text
+
+
+def json_to_list(data, numStreams):
+    streams = []
+    for i in range(0, numStreams):
+        channelName = data["streams"][i]["channel"]["name"]
+        streams.append(channelName)
+    return streams
+
+
 print_one = sys.argv[1] if len(sys.argv) > 1 else None
 print_one_val = sys.argv[2] if len(sys.argv) > 2 else None
 
@@ -23,19 +57,9 @@ class formatting:
     RED = "\033[91m"
 
 
-# Try to get stream info from json. Gives KeyError if the OAuth fails
-try:
-    numStreams = data["_total"]
-except KeyError:
-    print(formatting.RED + "KeyError - make sure your OAuth is formatted"
-          "correctly in live.py" + formatting.ENDC)
-    sys.exit(1)
-
 if print_one == 'select':
-    streams = []
-    for i in range(0, numStreams):
-        channelName = data["streams"][i]["channel"]["name"]
-        streams.append(channelName)
+    data, numStreams = get_data()
+    streams = json_to_list(data, numStreams)
 
     print(streams)
 
@@ -44,10 +68,10 @@ if print_one == 'select':
         Displays a window menu using dmenu. Returns window id.
         """
         dmenu = subprocess.Popen(
-            ['/usr/bin/rofi', '-i', '-l', str(l), '-dmenu', '-columns', '3', '-font', 'Noto Sans 14', '-width', '190'],
+            ['/usr/bin/rofi', '-i', '-l', str(l), '-dmenu', '-columns', '2', '-font', 'Noto Sans 14', '-width', '190'],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE)
-        menu_str = '\n'.join(sorted(streams))
+        menu_str = '\n'.join(streams)
         # Popen.communicate returns a tuple stdout, stderr
         win_str = dmenu.communicate(menu_str.encode('utf-8'))[0].decode('utf-8').rstrip()
         return win_str
@@ -55,17 +79,26 @@ if print_one == 'select':
     win_id = win_menu(streams)
     if win_id:
         subprocess.Popen(["streamlink", "www.twitch.tv/" + win_id, " best"])
-    sys.exit(0)
 
 if print_one == 'count':
-    print(numStreams)
-    sys.exit(0)
+    data, numStreams = get_data()
+    print(str(numStreams))
+    if FOLLOWED:
+        data_old = load_online_streams()
+        data_new = json_to_list(data, numStreams)
+        for stream in FOLLOWED:
+            if stream in data_new and stream not in data_old:
+                subprocess.Popen(["notify-send", "Stream Online", stream])
+        save_online_streams(data_new)
 
 if print_one == 'random':
+    data, numStreams = get_data()
     print_one_val = print_one_val or 'name'
     index = random.randint(0, numStreams-1)
     print(data["streams"][index]["channel"][print_one_val])
-else:
+
+if not print_one and not print_one_val:
+    data, numStreams = get_data()
     for i in range(0, numStreams):
         channelName = data["streams"][i]["channel"]["name"]
         channelGame = data["streams"][i]["channel"]["game"]
