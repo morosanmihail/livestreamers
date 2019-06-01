@@ -1,3 +1,5 @@
+# This readme needs changing. It's a wee bit out of date
+
 # livestreamers
 A python script that uses Twitch.tv API to check if a user's followed channels are live.
 
