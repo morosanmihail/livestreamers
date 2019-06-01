@@ -1,4 +1,5 @@
 # This readme needs changing. It's a wee bit out of date
+Got to add information on ```live random <column>```, ```live select``` and ```live count```
 
 # livestreamers
 A python script that uses Twitch.tv API to check if a user's followed channels are live.
@@ -16,9 +17,7 @@ Then simply run the ```live.py``` script. Example output:
 For easier usage you can add an alias in your ```.bash_profile```:
 ```bash
 function live() {
-  cd ~/livestreamers
-  . live.py
-  cd ~
+  python ~/livestreamers/live.py $1 $2
 }
 ```
 
