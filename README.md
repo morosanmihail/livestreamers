@@ -1,6 +1,8 @@
 # This readme needs changing. It's a wee bit out of date
 Got to add information on ```live random <column>```, ```live select``` and ```live count```
 
+[Video demo for live select](https://www.youtube.com/watch?v=g4j9EvPwFyI "UTub Link")
+
 # livestreamers
 A python script that uses Twitch.tv API to check if a user's followed channels are live.
 
