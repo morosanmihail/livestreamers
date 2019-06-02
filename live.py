@@ -63,10 +63,7 @@ if print_one == 'select':
 
     print(streams)
 
-    def win_menu(streams, l=10):
-        """
-        Displays a window menu using dmenu. Returns window id.
-        """
+    def rofi_menu(streams, l=10):
         dmenu = subprocess.Popen(
             ['/usr/bin/rofi', '-i', '-l', str(l), '-dmenu', '-columns', '2', '-font', 'Noto Sans 14', '-width', '190'],
             stdin=subprocess.PIPE,
@@ -76,9 +73,9 @@ if print_one == 'select':
         win_str = dmenu.communicate(menu_str.encode('utf-8'))[0].decode('utf-8').rstrip()
         return win_str
 
-    win_id = win_menu(streams)
-    if win_id:
-        subprocess.Popen(["streamlink", "www.twitch.tv/" + win_id, " best"])
+    stream = rofi_menu(streams)
+    if stream:
+        subprocess.Popen(["streamlink", "www.twitch.tv/" + stream, " best"])
 
 if print_one == 'count':
     data, numStreams = get_data()
