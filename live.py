@@ -57,8 +57,9 @@ class formatting:
     RED = "\033[91m"
 
 
+data, numStreams = get_data()
+
 if print_one == 'select':
-    data, numStreams = get_data()
     streams = json_to_list(data, numStreams)
 
     print(streams)
@@ -78,24 +79,21 @@ if print_one == 'select':
         subprocess.Popen(["streamlink", "www.twitch.tv/" + stream, " best"])
 
 if print_one == 'count':
-    data, numStreams = get_data()
     print(str(numStreams))
     if FOLLOWED:
         data_old = load_online_streams()
         data_new = json_to_list(data, numStreams)
         for stream in FOLLOWED:
             if stream in data_new and stream not in data_old:
-                subprocess.Popen(["notify-send", "Stream Online", stream])
+                subprocess.Popen(["notify-send", "Stream online", stream])
         save_online_streams(data_new)
 
 if print_one == 'random':
-    data, numStreams = get_data()
     print_one_val = print_one_val or 'name'
     index = random.randint(0, numStreams-1)
     print(data["streams"][index]["channel"][print_one_val])
 
 if not print_one and not print_one_val:
-    data, numStreams = get_data()
     for i in range(0, numStreams):
         channelName = data["streams"][i]["channel"]["name"]
         channelGame = data["streams"][i]["channel"]["game"]
