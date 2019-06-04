@@ -1,4 +1,5 @@
 import sys
+import html
 import json
 import random
 import requests
@@ -13,9 +14,13 @@ client_id = 'dsv0rf69bvzgi9ch6ys16vwncjax1z'
 
 
 def get_data():
-    response = requests.get(
-        url, headers={'Authorization': OAUTH, 'Client-ID': client_id}
-    )
+    try:
+        response = requests.get(
+            url, headers={'Authorization': OAUTH, 'Client-ID': client_id}
+        )
+    except:
+        print('0')
+        sys.exit(1)
     data = json.loads(response.text)
     # Try to get stream info from json. Gives KeyError if the OAuth fails
     try:
@@ -39,10 +44,14 @@ def load_online_streams():
 
 
 def json_to_list(data, numStreams):
-    streams = []
+    streams = {}
+    print(data)
     for i in range(0, numStreams):
-        channelName = data["streams"][i]["channel"]["name"]
-        streams.append(channelName)
+        channelName = '<b>{0}</b><sup>{1}</sup> - <small>{2}</small>'.format(
+            html.escape(data["streams"][i]["channel"]["name"]) or 'Unknown',
+            data["streams"][i]["viewers"] or 0,
+            html.escape(data["streams"][i]["channel"]["status"]) or '')
+        streams[data["streams"][i]["channel"]["name"]] = channelName
     return streams
 
 
@@ -60,23 +69,25 @@ class formatting:
 data, numStreams = get_data()
 
 if print_one == 'select':
+    data, numStreams = get_data()
     streams = json_to_list(data, numStreams)
 
-    print(streams)
-
-    def rofi_menu(streams, l=10):
+    def win_menu(streams, l=10):
+        """
+        Displays a window menu using dmenu. Returns window id.
+        """
         dmenu = subprocess.Popen(
-            ['/usr/bin/rofi', '-i', '-l', str(l), '-dmenu', '-columns', '2', '-font', 'Noto Sans 14', '-width', '190'],
+            ['/usr/bin/rofi', '-i', '-l', str(l), '-dmenu', '-columns', '2', '-markup-rows'],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE)
-        menu_str = '\n'.join(streams)
+        menu_str = '\n'.join(streams.values())
         # Popen.communicate returns a tuple stdout, stderr
         win_str = dmenu.communicate(menu_str.encode('utf-8'))[0].decode('utf-8').rstrip()
-        return win_str
+        return list(streams.keys())[list(streams.values()).index(win_str)]
 
-    stream = rofi_menu(streams)
-    if stream:
-        subprocess.Popen(["streamlink", "www.twitch.tv/" + stream, " best"])
+    win_id = win_menu(streams)
+    if win_id:
+        subprocess.Popen(["streamlink", "www.twitch.tv/" + win_id, " best"])
 
 if print_one == 'count':
     print(str(numStreams))
